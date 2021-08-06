@@ -13,7 +13,7 @@
 - Nuxt.js と TypeScript
 - なぜ抽選ツールを作ったのか
 - 完成物
-- 使う技術
+- 使った技術
 - 環境
 - 機能
 - 作成手順
@@ -44,9 +44,9 @@ TypeScript は、マイクロソフトによって開発されたオープンソ
 
 >gif
 
+ランダムにユーザーを抽選できるシンプルなツールです。
 デザインは近年流行ったニューモーフィズムを取り入れてみました。
 少ない配色でも凹凸によって奥行きができるので、シンプルなツールでも見栄えが良くなります。
-ランダムにユーザーを抽選できるシンプルなツールです。
 
 
 ## 使った技術
@@ -103,11 +103,34 @@ create-nuxt-app
 まず、どのくらいの単位で区切れば良いのかがわかリませんでした。
 そこで今回は[ Atomic Design ](https://design.dena.com/design/atomic-design-%E3%82%92%E5%88%86%E3%81%8B%E3%81%A3%E3%81%9F%E3%81%A4%E3%82%82%E3%82%8A%E3%81%AB%E3%81%AA%E3%82%8B)を参考に切り出しました。
 
+>図
+
 また、他の箇所でも使えるように汎用的に作ることです。
 クリックなどのイベントは全て親へ渡し、スタイルや表示の変更は親から値を渡すようにすることで、atoms単位のコンポーネントがどこでも使えるよう心がけました。
 
+例えばボタンコンポーネントは、予めいくつかのスタイルを定義しておき、親コンポーネントで使うときに下記のように props で必要なスタイルを渡すとともに、$emit でクリックイベントを親に渡しています。
+
 ```js
-コード コメント入れる
+//Button.vue
+<div>
+    <button
+        :class="[
+        colorStyle[buttonColor],
+        sizeStyle[buttonSize],
+        fontStyle[buttonFont],
+        ]"
+        @click="$emit('button-click')"
+    >
+        <slot></slot>
+    </button>
+</div>
+```
+
+```js
+//Input.vue
+<Button button-color="gray" button-size="short" button-font="small">
+    ADD
+</Button>
 ```
 
 そしてコンポーネント間のデータの受け渡しです。
@@ -132,16 +155,33 @@ Vuex ストアでデータを一元管理できるので、本当にわかりや
 >参考：[Vuexはなるべく避ける](https://python.ms/vuex/#%E3%81%AF%E3%81%97%E3%82%99%E3%82%81%E3%81%AB)<br>
 >　　　[Vuexで何をするか、何をしないか](https://speakerdeck.com/tooppoo/what-should-do-or-not-with-vuex)
 
-例えば、小さいレベルのコンポーネントからは Vuex を使用しない方が良さそうです。
+例えば、小さいレベルのコンポーネントからは Vuex を使用しない方が良いでしょう。
 コンポーネントの使い回しが難しくなるのと、１画面の中で複数の箇所から Vuex のストアへの参照と変更が入り組んだ場合、処理が追いにくくなるためです。
 
-Vuex を利用する際は、__Atom や Molecule レベルのコンポーネントの中では使わない__、__state を直接参照しない__、などに気をつけて運用したいと思います。
+Vuex を利用する際は、__Atom や Molecule レベルのコンポーネントの中では使わない__、__state を直接参照しない__、などのルールを設けて運用したいと思います。
 
 
 ### 4. firebase 導入
 DBとデプロイは firebase を利用します。
 firebase は以前にも使ったことがありましたが、やはり firestore を使えば面倒な手間をかけずにDBが実装できますね。万歳。
 デプロイも firebase の Hosting を使って行いました。
+
+さらに、今回は社内向けツールなので、デプロイにあたり外部からのアクセスを制限するため、 Authentication を使用してログイン認証を追加します。管理者アカウントとしてユーザーを一人だけ登録し、簡単なPWを打てば誰でも使えるようにしました。
+ログインしていない状態では認証後のページへ飛べないようにするため、強制的にindexへリダイレクトするmiddlewareを追加しました。
+
+```js
+const auth = firebase.auth()
+
+const middleware: Middleware = ({ route, redirect }) => {
+  auth.onAuthStateChanged((user) => {
+    if (!user && route.name !== 'index') redirect('/')
+  })
+}
+```
+
+また、Authentication の認証状態は、デフォルトではユーザーがブラウザを閉じた後でも永続的に維持されるようになっています。
+今回は管理者アカウント一つだけの使用になるため、ログアウトせずにウィンドウを閉じてしまうと、他の人がアクセスした時でも前のセッションが続くことになります。
+そこで、 `firebase.auth().setPersistence` メソッドで永続性タイプを `SESSION` に変更することで、ウィンドウやタブを閉じるたびにログイン状態がクリアされるようにしました。
 
 ちなみに、Nuxt.js には[ nuxt/firebase ](https://firebase.nuxtjs.org/)というモジュールがあります。firebase をより簡単に利用できるので、興味があればご覧ください。
 
