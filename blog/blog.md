@@ -34,13 +34,12 @@ TypeScript は、マイクロソフトによって開発されたオープンソ
 
 
 ## なぜ抽選ツールを作ったのか
-私の所属する 5G では主に Nuxt.js + Typescript を使ってサービスを開発・運用しています。
-私は Vue.js 初学者かつ Nuxt.js 未経験のため、アウトプットにより Nuxt.js と TypeScript の概要を掴むことが目的です。
-チーム内MTGのファシリテーターをランダムで決めるツールが欲しいという経緯もありました。
-
+主な理由は、以下の2点です。
+1. 私の所属するチームで扱っている Nuxt.js および Typescript の概要を掴むため
+2. チーム内でMTGのファシリテータが偏ってしまう課題を解決するため
 
 ## 完成物
-というわけで、さっそくですが完成した物がこちら。
+さっそくですが、完成した物がこちら。
 
 >gif
 
@@ -110,7 +109,7 @@ create-nuxt-app
 
 例えばボタンコンポーネントは、予めいくつかのスタイルを定義しておき、親コンポーネントで使うときに下記のように props で必要なスタイルを渡すとともに、$emit でクリックイベントを親に渡しています。
 
-```js
+```ts
 //Button.vue
 <div>
     <button
@@ -126,7 +125,7 @@ create-nuxt-app
 </div>
 ```
 
-```js
+```ts
 //Input.vue
 <Button button-color="gray" button-size="short" button-font="small">
     ADD
@@ -169,7 +168,7 @@ firebase は以前にも使ったことがありましたが、やはり firesto
 さらに、今回は社内向けツールなので、デプロイにあたり外部からのアクセスを制限するため、 Authentication を使用してログイン認証を追加します。管理者アカウントとしてユーザーを一人だけ登録し、簡単なPWを打てば誰でも使えるようにしました。
 ログインしていない状態では認証後のページへ飛べないようにするため、強制的にindexへリダイレクトするmiddlewareを追加しました。
 
-```js
+```ts
 const auth = firebase.auth()
 
 const middleware: Middleware = ({ route, redirect }) => {
